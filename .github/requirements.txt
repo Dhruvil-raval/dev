@@ -1,0 +1,9 @@
+# Application dependencies (if any, e.g., if your app makes API calls)
+requests==2.32.3
+
+# Testing dependencies (required to run the 'test' job)
+pytest==8.2.2       # Popular testing framework
+# You can use 'unittest' (built-in) or 'pytest' (more common in industry)
+
+# Optional: Tools for code quality checks
+flake8==7.1.0       # For style/linting checks
