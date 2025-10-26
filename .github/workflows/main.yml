@@ -1,0 +1,73 @@
+# ----------------------------------------------------
+# 1. GLOBAL STAGE DEFINITION
+# Defines the order in which jobs will run. Jobs in the same stage run in parallel.
+# ----------------------------------------------------
+stages:
+  - build
+  - test
+  - deploy
+
+# ----------------------------------------------------
+# 2. BUILD STAGE JOB
+# This job prepares the application package (the "artifact").
+# We use a slim Python Docker image for a clean environment.
+# ----------------------------------------------------
+build_job:
+  stage: build
+  image: python:3.11-slim
+  script:
+    - echo "--- Starting Build Stage ---"
+    - echo "1. Installing Python dependencies..."
+    # Assuming you have a file named 'requirements.txt' listing your project's libraries
+    - pip install -r requirements.txt
+    - echo "2. Creating application artifact (e.g., zip or compiled files)..."
+    - mkdir build_output
+    - touch build_output/my_app_artifact.zip # Placeholder for your compiled/packaged app
+    - echo "Build successful. Artifact created."
+  artifacts:
+    # Key: The files created here are saved and automatically passed to jobs in later stages.
+    paths:
+      - build_output/ # Save the folder containing the artifact
+    expire_in: 1 week # Don't keep old files forever
+
+# ----------------------------------------------------
+# 3. TEST STAGE JOB
+# This job runs automated unit tests. It uses the artifact from the build stage.
+# ----------------------------------------------------
+unit_test_job:
+  stage: test
+  image: python:3.11-slim
+  dependencies:
+    - build_job # Explicitly states this job needs the build_job artifacts
+  script:
+    - echo "--- Starting Test Stage ---"
+    - echo "1. Running Python unit tests..."
+    # You would typically install pytest and run it, or use Python's built-in unittest module.
+    # Example: If your tests are in a 'tests/' folder:
+    - python -m unittest discover tests
+    - echo "2. Running security or static code analysis (optional)..."
+    # Placeholder command
+    - echo "Test stage finished."
+  # Set up rules to only run tests on feature branches or merge requests
+  rules:
+    - if: $CI_COMMIT_BRANCH != "main"
+
+# ----------------------------------------------------
+# 4. DEPLOY STAGE JOB
+# This job deploys the artifact to an environment.
+# Note the 'when: manual' keyword, which requires a user click to run, preventing accidental production deployment.
+# ----------------------------------------------------
+deploy_dev_job:
+  stage: deploy
+  image: alpine/helm:latest # A lightweight image with deployment tools
+  # Key: This job only runs when the 'main' branch is updated.
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+  script:
+    - echo "--- Starting Deployment to DEV Environment ---"
+    # $CI_COMMIT_SHA is a predefined CI/CD Variable (the unique commit ID)
+    - echo "Deploying version $CI_COMMIT_SHA..."
+    # Replace this with your actual deployment command (e.g., calling a custom Bash script or Terraform)
+    - echo "./deploy_to_server.sh build_output/my_app_artifact.zip dev_server" 
+    - echo "Deployment job complete."
+  when: manual # Critical: Requires a manual click to start the deployment
