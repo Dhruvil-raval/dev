@@ -1,4 +1,4 @@
-// Updated Jenkinsfile to run pip install as root
+// Corrected Jenkinsfile
 pipeline {
     agent any
 
@@ -12,13 +12,8 @@ pipeline {
 
         stage('Build') {
             steps {
-                echo 'Installing dependencies as root...'
-                script {
-                    // Find the ID of the current Jenkins container
-                    def containerId = sh(returnStdout: true, script: "docker ps -q --filter ancestor=jenkins/jenkins:lts").trim()
-                    // Execute pip install command as root inside the container
-                    sh "docker exec -u root \$containerId pip install -r requirements.txt"
-                }
+                echo 'Installing dependencies...'
+                sh 'pip install -r requirements.txt'
             }
         }
 
@@ -29,8 +24,17 @@ pipeline {
             }
         }
     }
-
+    
+    // The post block must contain conditions with steps
     post {
-        // ...
+        always {
+            echo 'Pipeline execution complete.'
+        }
+        success {
+            echo 'The pipeline finished successfully!'
+        }
+        failure {
+            echo 'The pipeline failed. Check the logs for details.'
+        }
     }
 }
